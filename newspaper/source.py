@@ -9,6 +9,7 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright 2014, Lucas Ou-Yang'
 
 import logging
+import feedparser
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from tldextract import tldextract
@@ -36,8 +37,12 @@ class Feed(object):
         self.url = url
         self.rss = None
         # TODO self.dom = None, speed up Feedparser
-
-
+    def parse(self):
+        if self.rss is not None:
+            self.d=feedparser.parse(self.rss)
+            self.good_feed=len(d['entries'])>0
+        else:
+            self.good_feed=False
 NUM_THREADS_PER_SOURCE_WARN_LIMIT = 5
 
 
@@ -51,7 +56,7 @@ class Source(object):
     brand      =  'cnn'
     """
 
-    def __init__(self, url, config=None, **kwargs):
+    def __init__(self, url, config=None,only_rss=False,feed_lst=[], **kwargs):
         """The config object for this source will be passed into all of this
         source's children articles unless specified otherwise or re-set.
         """
@@ -60,7 +65,8 @@ class Source(object):
 
         self.config = config or Configuration()
         self.config = utils.extend_config(self.config, kwargs)
-
+        self.only_rss=only_rss
+        
         self.extractor = ContentExtractor(self.config)
 
         self.url = url
@@ -70,7 +76,8 @@ class Source(object):
         self.scheme = urls.get_scheme(self.url)
 
         self.categories = []
-        self.feeds = []
+        self.feeds = [Feed(url=x) for x in feed_lst]
+        self.only_rss=len(feed_lst)>0
         self.articles = []
 
         self.html = ''
@@ -91,10 +98,12 @@ class Source(object):
         self.download()
         self.parse()
 
-        self.set_categories()
-        self.download_categories()  # mthread
-        self.parse_categories()
-
+        if not self.only_rss:
+            self.set_categories()
+            self.download_categories()  # mthread
+            self.parse_categories()
+        else:
+            print("Only RSS, skipping categories")
         self.set_feeds()
         self.download_feeds()  # mthread
         # self.parse_feeds()
@@ -165,7 +174,7 @@ class Source(object):
 
         categories_and_common_feed_urls = self.categories + common_feed_urls_as_categories
         urls = self.extractor.get_feed_urls(self.url, categories_and_common_feed_urls)
-        self.feeds = [Feed(url=url) for url in urls]
+        self.feeds.extend([Feed(url=url) for url in urls])
 
     def set_description(self):
         """Sets a blurb for this source, for now we just query the
@@ -207,11 +216,12 @@ class Source(object):
             if req.resp is not None:
                 self.feeds[index].rss = network.get_html(
                     req.url, response=req.resp)
+                self.feeds[index].parse()
             else:
                 log.warning(('Deleting feed %s from source %s due to '
                              'download error') %
                              (self.categories[index].url, self.url))
-        self.feeds = [f for f in self.feeds if f.rss]
+        self.feeds = [f for f in self.feeds if f.rss and f.good_feed]
 
     def parse(self):
         """Sets the lxml root, also sets lxml roots of all
@@ -257,7 +267,8 @@ class Source(object):
         """
         articles = []
         for feed in self.feeds:
-            urls = self.extractor.get_urls(feed.rss, regex=True)
+            #for entries in feed.d['entries']:
+            urls = [x.link for x in feed.d.entries]
             cur_articles = []
             before_purge = len(urls)
 
@@ -268,17 +279,14 @@ class Source(object):
                     config=self.config)
                 cur_articles.append(article)
 
-            cur_articles = self.purge_articles('url', cur_articles)
-            after_purge = len(cur_articles)
-
             if self.config.memoize_articles:
                 cur_articles = utils.memoize_articles(self, cur_articles)
             after_memo = len(cur_articles)
 
             articles.extend(cur_articles)
 
-            log.debug('%d->%d->%d for %s' %
-                      (before_purge, after_purge, after_memo, feed.url))
+            print('%d->%d for %s' %
+                      (before_purge, after_memo, feed.url))
         return articles
 
     def categories_to_articles(self):
