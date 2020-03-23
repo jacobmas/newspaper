@@ -40,7 +40,7 @@ class Feed(object):
     def parse(self):
         if self.rss is not None:
             self.d=feedparser.parse(self.rss)
-            self.good_feed=len(d['entries'])>0
+            self.good_feed=len(self.d.entries)>0
         else:
             self.good_feed=False
 NUM_THREADS_PER_SOURCE_WARN_LIMIT = 5

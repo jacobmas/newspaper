@@ -22,6 +22,7 @@ def build(url='', dry=False, config=None,feed_lst=[], **kwargs) -> Source:
     """Returns a constructed source object without
     downloading or parsing the articles
     """
+    print("BLOP")
     config = config or Configuration()
     config = extend_config(config, kwargs)
     url = url or ''
