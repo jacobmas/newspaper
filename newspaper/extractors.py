@@ -788,6 +788,7 @@ class ContentExtractor(object):
                 nodes_with_text.append(node)
 
         nodes_number = len(nodes_with_text)
+        print(f"nodes_number={nodes_number}")
         negative_scoring = 0
         bottom_negativescore_nodes = float(nodes_number) * 0.25
 

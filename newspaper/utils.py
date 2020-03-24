@@ -381,6 +381,7 @@ def print_available_languages():
         'nl': 'Dutch',
         'no': 'Norwegian',
         'pl': 'Polish',
+        'ps': 'Pashto',
         'pt': 'Portuguese',
         'ro': 'Romanian',
         'ru': 'Russian',

@@ -29,4 +29,4 @@ except ImportError:
 fh = logging.FileHandler('newspaper.log')
 fh.setLevel(level=logging.INFO)
                  
-logging.getLogger(__name__).addHandler(fh)
+logging.getLogger(__name__).addHandler(logging.NullHandler())
