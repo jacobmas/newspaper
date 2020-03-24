@@ -211,6 +211,13 @@ def valid_url(url, verbose=False, test=False):
                 if verbose: print('%s verified for being a slug' % url)
                 return True
 
+    # Custom article.aspx handler
+    if re.search(r'\/[Aa]rticle\.aspx',url) is not None:
+        if verbose: print('%s verified for Article.aspx' % url)
+ 
+        return True
+
+            
     # There must be at least 2 subpaths
     if len(path_chunks) <= 1:
         if verbose: print('%s caught for path chunks too small' % url)
@@ -235,6 +242,7 @@ def valid_url(url, verbose=False, test=False):
             if verbose: print('%s verified for good path' % url)
             return True
 
+        
     if verbose: print('%s caught for default false' % url)
     return False
 

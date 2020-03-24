@@ -20,10 +20,13 @@ news_pool = NewsPool()
 import logging
 
 try:  # Python 2.7+
-    from logging import NullHandler
+    from logging import NullHandler,FileHandler
 except ImportError:
-    class NullHandler(logging.Handler):
+    class NullHandler(logging.Handler,level=logging.INFO):
         def emit(self, record):
             pass
-
-logging.getLogger(__name__).addHandler(NullHandler())
+        
+fh = logging.FileHandler('newspaper.log')
+fh.setLevel(level=logging.INFO)
+                 
+logging.getLogger(__name__).addHandler(fh)
